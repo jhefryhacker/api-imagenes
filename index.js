@@ -28,7 +28,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
-  }
+  },
 });
 
 const upload = multer({
@@ -37,7 +37,7 @@ const upload = multer({
     const allowed = /jpeg|jpg|png|gif|webp/;
     const valid = allowed.test(path.extname(file.originalname).toLowerCase());
     valid ? cb(null, true) : cb(new Error("Solo se permiten imágenes"));
-  }
+  },
 });
 
 // ✅ GET - Todos los productos
@@ -53,7 +53,8 @@ app.get("/productos/:categoria", (req, res) => {
 
 // ✅ POST - Subir producto con imagen
 app.post("/subir/:categoria", upload.single("imagen"), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No se subió ninguna imagen" });
+  if (!req.file)
+    return res.status(400).json({ error: "No se subió ninguna imagen" });
 
   const { categoria } = req.params;
   const { nombre, precio, descripcion, cantidad } = req.body;
@@ -81,7 +82,8 @@ app.post("/subir/:categoria", upload.single("imagen"), (req, res) => {
 app.put("/productos/:id", (req, res) => {
   const productos = leerProductos();
   const index = productos.findIndex((p) => p.id === parseInt(req.params.id));
-  if (index === -1) return res.status(404).json({ error: "Producto no encontrado" });
+  if (index === -1)
+    return res.status(404).json({ error: "Producto no encontrado" });
   productos[index] = { ...productos[index], ...req.body };
   guardarProductos(productos);
   res.json({ mensaje: "Producto actualizado", producto: productos[index] });
@@ -91,8 +93,14 @@ app.put("/productos/:id", (req, res) => {
 app.delete("/productos/:id", (req, res) => {
   let productos = leerProductos();
   const producto = productos.find((p) => p.id === parseInt(req.params.id));
-  if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
-  const filePath = path.join(__dirname, "public/images", producto.categoria, producto.imagen);
+  if (!producto)
+    return res.status(404).json({ error: "Producto no encontrado" });
+  const filePath = path.join(
+    __dirname,
+    "public/images",
+    producto.categoria,
+    producto.imagen,
+  );
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   productos = productos.filter((p) => p.id !== parseInt(req.params.id));
   guardarProductos(productos);
@@ -103,10 +111,15 @@ app.delete("/productos/:id", (req, res) => {
 app.get("/categorias", (req, res) => {
   const dir = path.join(__dirname, "public/images");
   if (!fs.existsSync(dir)) return res.json([]);
-  const categorias = fs.readdirSync(dir).filter(f =>
-    fs.statSync(path.join(dir, f)).isDirectory()
-  );
+  const categorias = fs
+    .readdirSync(dir)
+    .filter((f) => fs.statSync(path.join(dir, f)).isDirectory());
   res.json(categorias);
+});
+
+// ✅ GET - Admin panel
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/admin.html"));
 });
 
 app.get("/hola", (req, res) => res.json({ message: "hola, como estas?" }));
